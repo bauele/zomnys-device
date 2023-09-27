@@ -1,26 +1,56 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { useState } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 
-function App() {
+import Clock from './components/clock';
+import SleepingModeTimer from './components/sleepingModeTimer';
+import Button from './components/button';
+
+export default function App() {
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [sleepingModeActive, setSleepingModeActive] = useState(false);
+    const [sleepingModeStart, setSleepingModeStart] = useState(new Date());
+
+    //  Obtain a new date object with the current time every second
+    setInterval(() => {
+        setCurrentDate(new Date());
+    }, 1000);
+
+    function toggleSleepingMode() {
+        if (!sleepingModeActive) {
+            setSleepingModeStart(new Date());
+        }
+
+        setSleepingModeActive(!sleepingModeActive);
+    }
+
     return (
-        <div className="App">
-            <header className="App-header">
-                <img src={logo} className="App-logo" alt="logo" />
-                <p>
-                    Edit <code>src/App.tsx</code> and save to reload.
-                </p>
-                <a
-                    className="App-link"
-                    href="https://reactjs.org"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    Learn React
-                </a>
-            </header>
-        </div>
+        <main>
+            <Routes>
+                <Route
+                    path="/"
+                    element={
+                        <>
+                            <Clock date={currentDate} />
+                            {sleepingModeActive ? (
+                                <div>
+                                    <SleepingModeTimer
+                                        currentDate={currentDate}
+                                        sleepingModeStart={sleepingModeStart}
+                                    />
+                                </div>
+                            ) : (
+                                <></>
+                            )}
+                            <Button
+                                onClick={() => {
+                                    toggleSleepingMode();
+                                }}
+                                text="Toggle Sleeping Mode"
+                            />
+                        </>
+                    }
+                />
+            </Routes>
+        </main>
     );
 }
-
-export default App;
