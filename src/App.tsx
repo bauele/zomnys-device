@@ -1,26 +1,52 @@
-import { useState } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 
-import Clock from './components/clock';
-import SleepingModeTimer from './components/sleepingModeTimer';
-import Button from './components/button';
+import ClockFace from './pages/clockFace';
+import LogAwakening from './pages/logAwakening';
 
 export default function App() {
+    //  Timer that is used to update the clock
+    let timerId: NodeJS.Timer;
+
     const [currentDate, setCurrentDate] = useState(new Date());
     const [sleepingModeActive, setSleepingModeActive] = useState(false);
     const [sleepingModeStart, setSleepingModeStart] = useState(new Date());
+    const [awakeningCount, setAwakeningCount] = useState(0);
+    const [awakeningLog, setAwakeningLog] = useState(
+        Array<{ timestamp: Date; reason: String }>,
+    );
 
-    //  Obtain a new date object with the current time every second
-    setInterval(() => {
-        setCurrentDate(new Date());
-    }, 1000);
+    useEffect(() => {
+        //  Obtain a new date object with the current time every second
+        timerId = setInterval(() => {
+            setCurrentDate(new Date());
+        }, 1000);
+
+        return () => {
+            //  Release the timer when unmounting component
+            clearInterval(timerId);
+        };
+    });
 
     function toggleSleepingMode() {
+        //  If sleeping mode was not already active, get a current timestamp
         if (!sleepingModeActive) {
             setSleepingModeStart(new Date());
         }
+        //  Otherwise, reset the awakening states
+        else {
+            setAwakeningCount(0);
+            setAwakeningLog(Array<{ timestamp: Date; reason: String }>());
+        }
 
         setSleepingModeActive(!sleepingModeActive);
+    }
+
+    function logAwakening(timestamp: Date, reason: String) {
+        //  Add the reported awakening entry into the log
+        const newAwakeningEntry = { timestamp: timestamp, reason: reason };
+        setAwakeningLog([...awakeningLog, newAwakeningEntry]);
+        setAwakeningCount(awakeningCount + 1);
     }
 
     return (
@@ -29,27 +55,28 @@ export default function App() {
                 <Route
                     path="/"
                     element={
-                        <>
-                            <Clock date={currentDate} />
-                            {sleepingModeActive ? (
-                                <div>
-                                    <SleepingModeTimer
-                                        currentDate={currentDate}
-                                        sleepingModeStart={sleepingModeStart}
-                                    />
-                                </div>
-                            ) : (
-                                <></>
-                            )}
-                            <Button
-                                onClick={() => {
-                                    toggleSleepingMode();
-                                }}
-                                text="Toggle Sleeping Mode"
-                            />
-                        </>
+                        <ClockFace
+                            currentDate={currentDate}
+                            sleepingModeActive={sleepingModeActive}
+                            sleepingModeStart={sleepingModeStart}
+                            toggleSleepingMode={() => toggleSleepingMode()}
+                            awakeningCount={awakeningCount}
+                        ></ClockFace>
                     }
                 />
+                <Route
+                    path="pages/log-awakening"
+                    element={
+                        <LogAwakening
+                            onAwakeningLogged={(
+                                timestamp: Date,
+                                reason: String,
+                            ) => {
+                                logAwakening(timestamp, reason);
+                            }}
+                        />
+                    }
+                ></Route>
             </Routes>
         </main>
     );

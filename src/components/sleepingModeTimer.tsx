@@ -1,11 +1,13 @@
 type SleepingModeTimerProps = {
     currentDate: Date;
     sleepingModeStart: Date;
+    awakeningCount: number;
 };
 
 export default function SleepingModeTimer({
     currentDate,
     sleepingModeStart,
+    awakeningCount,
 }: SleepingModeTimerProps) {
     function getSleepingModeTime() {
         //  Allow for some wiggle room in the date objects, but if the current date is set to
@@ -13,13 +15,17 @@ export default function SleepingModeTimer({
         //  error
         if (currentDate.getTime() - sleepingModeStart.getTime() < -1000) {
             throw Error(
-                'Sleeping mode cannot be activated before the current time'
+                'Sleeping mode cannot be activated before the current time',
             );
+        }
+
+        if (awakeningCount < 0) {
+            throw Error('Awakening count cannot be less than 0');
         }
 
         //  Get the amount of time sleeping mode has been active in milliseconds
         let sleepingModeTimeMs = Math.abs(
-            currentDate.getTime() - sleepingModeStart.getTime()
+            currentDate.getTime() - sleepingModeStart.getTime(),
         );
 
         let sleepingSeconds = Math.floor(sleepingModeTimeMs / 1000);
@@ -36,7 +42,11 @@ export default function SleepingModeTimer({
             sleepingHours++;
         }
 
-        return `You have been sleeping for ${sleepingHours} hr, ${sleepingMinutes} min, ${sleepingSeconds} sec`;
+        let sleepingTimeText = `You have been sleeping for ${sleepingHours} hr, ${sleepingMinutes} min, ${sleepingSeconds} sec`;
+        sleepingTimeText +=
+            awakeningCount > 0 ? ` with ${awakeningCount} awakenings` : '';
+
+        return sleepingTimeText;
     }
 
     return <p>{getSleepingModeTime()}</p>;
