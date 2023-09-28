@@ -35,6 +35,7 @@ export default function App() {
         }
         //  Otherwise, reset the awakening states
         else {
+            setSleepingModeStart(new Date(0));
             setAwakeningCount(0);
             setAwakeningLog(Array<{ timestamp: Date; reason: String }>());
         }
@@ -55,13 +56,16 @@ export default function App() {
                 <Route
                     path="/"
                     element={
-                        <ClockFace
-                            currentDate={currentDate}
-                            sleepingModeActive={sleepingModeActive}
-                            sleepingModeStart={sleepingModeStart}
-                            toggleSleepingMode={() => toggleSleepingMode()}
-                            awakeningCount={awakeningCount}
-                        ></ClockFace>
+                        <>
+                            <p>Sleep Log</p>
+                            <ClockFace
+                                currentDate={currentDate}
+                                sleepingModeActive={sleepingModeActive}
+                                sleepingModeStart={sleepingModeStart}
+                                toggleSleepingMode={() => toggleSleepingMode()}
+                                awakeningCount={awakeningCount}
+                            ></ClockFace>
+                        </>
                     }
                 />
                 <Route
