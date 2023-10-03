@@ -4,6 +4,13 @@ import { Routes, Route } from 'react-router-dom';
 import ClockFace from './pages/clockFace';
 import LogAwakening from './pages/logAwakening';
 
+import { SleepLog, SleepRecord } from 'shared';
+
+let sl = new SleepLog();
+sl.print();
+
+let sr = new SleepRecord('1', new Date(), new Date(), 3);
+
 export default function App() {
     //  Timer that is used to update the clock
     let timerId: NodeJS.Timer;
