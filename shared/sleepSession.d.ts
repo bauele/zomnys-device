@@ -1,4 +1,4 @@
-export default class SleepRecord {
+export declare class SleepSession {
     id: string;
     timestampStart: Date;
     timestampEnd: Date;

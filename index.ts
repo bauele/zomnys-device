@@ -3,14 +3,14 @@ const app = express();
 const port = 5000;
 
 import sqlite3 from 'sqlite3';
-import { SleepRecord } from './shared/sleepRecord';
+import { SleepSession } from './shared/sleepSession';
 
 //  Create database if it doesn't already exist
 let db = new sqlite3.Database('data/sleep_log.db', (error) => {
     console.log(error);
 });
 
-let sr = new SleepRecord('1', new Date(), new Date(), 3);
+let sr = new SleepSession('1', new Date(), new Date(), 3);
 
 db.exec(
     'CREATE TABLE IF NOT EXISTS sleep_sessions(id INTEGER PRIMARY KEY AUTOINCREMENT, sleep_start INTEGER, sleep_end INTEGER, awakening_count INTEGER)',
