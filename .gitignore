@@ -2,3 +2,7 @@ node_modules
 *.js
 *.db
 *.env
+
+#   Make exception for the configuration file used by
+#   react-app-rewired
+!config-overrides.js
