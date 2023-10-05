@@ -4,7 +4,7 @@ import { Routes, Route, Link } from 'react-router-dom';
 import ClockFace from './pages/clockFace';
 import LogAwakening from './pages/logAwakening';
 
-import { SleepSession } from 'shared';
+import { SleepSession, SleepAwakening } from 'shared';
 import Button from './components/button';
 import SleepLog from './pages/sleepLog';
 
@@ -21,10 +21,7 @@ export default function App() {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [sleepingModeActive, setSleepingModeActive] = useState(false);
     const [sleepingModeStart, setSleepingModeStart] = useState(new Date());
-    const [awakeningCount, setAwakeningCount] = useState(0);
-    const [awakeningLog, setAwakeningLog] = useState(
-        Array<{ timestamp: Date; reason: String }>,
-    );
+    const [awakeningLog, setAwakeningLog] = useState(Array<SleepAwakening>);
 
     useEffect(() => {
         //  Get the current date immediately
@@ -49,8 +46,7 @@ export default function App() {
         //  Otherwise, reset the awakening states
         else {
             setSleepingModeStart(new Date(0));
-            setAwakeningCount(0);
-            setAwakeningLog(Array<{ timestamp: Date; reason: String }>());
+            setAwakeningLog(Array<SleepAwakening>());
         }
 
         setSleepingModeActive(!sleepingModeActive);
@@ -58,9 +54,8 @@ export default function App() {
 
     function logAwakening(timestamp: Date, reason: String) {
         //  Add the reported awakening entry into the log
-        const newAwakeningEntry = { timestamp: timestamp, reason: reason };
-        setAwakeningLog([...awakeningLog, newAwakeningEntry]);
-        setAwakeningCount(awakeningCount + 1);
+        const newSleepAwakening = new SleepAwakening(timestamp, reason);
+        setAwakeningLog([...awakeningLog, newSleepAwakening]);
     }
 
     async function saveSleepSession() {
@@ -69,7 +64,7 @@ export default function App() {
             const sleepSession = new SleepSession(
                 sleepingModeStart,
                 new Date(),
-                awakeningCount,
+                awakeningLog.length,
             );
 
             //  Post the sleep session to the server
@@ -81,7 +76,8 @@ export default function App() {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        sleepSession,
+                        sleepSession: sleepSession,
+                        sleepAwakenings: awakeningLog,
                     }),
                 },
             );
@@ -110,7 +106,7 @@ export default function App() {
                                 sleepingModeStart={sleepingModeStart}
                                 toggleSleepingMode={() => toggleSleepingMode()}
                                 saveSleepSession={saveSleepSession}
-                                awakeningCount={awakeningCount}
+                                awakeningCount={awakeningLog.length}
                             ></ClockFace>
                         </>
                     }

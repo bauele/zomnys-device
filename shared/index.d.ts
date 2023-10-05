@@ -1,2 +1,2 @@
-export { SleepSession } from './SleepSession';
-export { SleepLog } from './sleepLog';
+export { SleepSession } from './sleepSession';
+export { SleepAwakening } from './sleepAwakening';

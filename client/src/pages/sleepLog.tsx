@@ -16,14 +16,12 @@ export default function SleepLog({}: SleepLogProps) {
             try {
                 const response = await fetch(
                     `${process.env.REACT_APP_SERVER_ADDRESS}/sleep-sessions`,
-                    //'http://localhost:50100/sleep-sessions',
                     {
                         method: 'GET',
                     },
                 );
 
                 //  Parse the response and update the state
-
                 const sleepSessionsResponse = await response.json();
                 const sleepSessionsArray = new Array<SleepSession>();
                 sleepSessionsResponse.forEach((sleepSession: SleepSession) =>

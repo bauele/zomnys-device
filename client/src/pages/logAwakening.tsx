@@ -15,6 +15,27 @@ export default function LogAwakening({ onAwakeningLogged }: LogAwakeningProps) {
                     }}
                     text="General"
                 />
+
+                <Button
+                    onClick={() => {
+                        onAwakeningLogged(new Date(), 'Hunger/Thirst');
+                    }}
+                    text="Hunger/Thirst"
+                />
+
+                <Button
+                    onClick={() => {
+                        onAwakeningLogged(new Date(), 'Bathroom');
+                    }}
+                    text="Bathroom"
+                />
+
+                <Button
+                    onClick={() => {
+                        onAwakeningLogged(new Date(), 'Nightmare');
+                    }}
+                    text="Nightmare"
+                />
             </Link>
             <Link to="/">
                 <Button onClick={() => {}} text="Go Back" />

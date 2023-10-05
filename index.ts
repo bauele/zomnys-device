@@ -44,6 +44,8 @@ app.post('/save-sleep-session', (req: Request, res: Response) => {
     console.log('Request recieved');
 
     const sleepSession = req.body.sleepSession;
+    const awakeningLog = req.body.awakeningLog;
+
     sleepSessionDAO.addSleepSession(sleepSession);
     res.send();
 });
