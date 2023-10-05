@@ -8,6 +8,12 @@ import { SleepSession } from 'shared';
 import Button from './components/button';
 import SleepLog from './pages/sleepLog';
 
+if (process.env.REACT_APP_MODE === 'development') {
+    console.log('App is in development mode');
+    const { worker } = require('./mocks/browser');
+    worker.listen();
+}
+
 export default function App() {
     //  Timer that is used to update the clock
     let timerId: NodeJS.Timer;

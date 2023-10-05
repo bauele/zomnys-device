@@ -1,0 +1,24 @@
+import { render, screen } from '@testing-library/react';
+import { BrowserRouter } from 'react-router-dom';
+import '@testing-library/jest-dom';
+import SleepLog from './sleepLog';
+
+describe('Sleep Log', () => {
+    //  This test uses a mocked api call to get sleep sessions, then
+    //  verifies that the correct number of listitems are rendered
+    //  onto the page
+    it('should get a list of sleep sessions on render', async () => {
+        render(
+            //  The SleepLog component contains a Link component,
+            //  so it needs to be wrapped in a BrowserRouter
+            <BrowserRouter>
+                <SleepLog />
+            </BrowserRouter>,
+        );
+
+        //  findAllBy returns a promise, so this is used to give the
+        //  server mock some time to complete
+        const sleepSessions = await screen.findAllByRole('listitem');
+        expect(sleepSessions.length).toBe(2);
+    });
+});
