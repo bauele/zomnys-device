@@ -1,34 +1,49 @@
 import express, { Request, Response } from 'express';
+const cors = require('cors');
+require('dotenv').config();
+
+import { SleepSessionDAO } from './server/src/sleepSessionDao';
+import { SleepSession } from './shared/sleepSession';
+
 const app = express();
 const port = 5000;
 
-import sqlite3 from 'sqlite3';
-import { SleepSession } from './shared/sleepSession';
-
-//  Create database if it doesn't already exist
-let db = new sqlite3.Database('data/sleep_log.db', (error) => {
-    console.log(error);
+//  Read in the path set for the sleep sessions database from the environment
+//  variables file. If not available, throw an error and terminate
+let sleepSessionsDatabasePath = process.env.SLEEP_SESSIONS_DATABASE_PATH;
+if (!sleepSessionsDatabasePath) {
+    console.error(
+        'Database path for sleep sessions database not properly set. Terminating.',
+    );
+    process.exit(1);
+}
+let sleepSessionDAO = new SleepSessionDAO();
+sleepSessionDAO.initialize(sleepSessionsDatabasePath).then(() => {
+    console.log('Database ready');
 });
-
-let sr = new SleepSession('1', new Date(), new Date(), 3);
-
-db.exec(
-    'CREATE TABLE IF NOT EXISTS sleep_sessions(id INTEGER PRIMARY KEY AUTOINCREMENT, sleep_start INTEGER, sleep_end INTEGER, awakening_count INTEGER)',
-);
-db.exec('INSERT INTO sleep_sessions VALUES (NULL, 112, 112, 3)');
-db.each('SELECT * FROM sleep_sessions', (err, row) => {
-    if (err) {
-        console.log(err);
-    }
-
-    console.log(row);
-});
-
-db.close();
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
+app.use(
+    cors({
+        origin: '*',
+    }),
+);
+app.use(express.json());
 
-// create a GET route
-app.get('/', (req: Request, res: Response) => {
-    res.send('Home');
+//  Get all of the available sleep sessions
+app.get('/sleep-sessions', (req: Request, res: Response) => {
+    const getAllSleepSessionsPromise = sleepSessionDAO?.getAllSleepSessions();
+
+    getAllSleepSessionsPromise.then((sleepSessions: SleepSession[]) => {
+        res.send(sleepSessions);
+    });
+});
+
+//  TODO: Error checking on request body parameters
+app.post('/save-sleep-session', (req: Request, res: Response) => {
+    console.log('Request recieved');
+
+    const sleepSession = req.body.sleepSession;
+    sleepSessionDAO.addSleepSession(sleepSession);
+    res.send();
 });

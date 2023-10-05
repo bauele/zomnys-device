@@ -10,6 +10,7 @@ type ClockFaceProps = {
     sleepingModeActive: Boolean;
     sleepingModeStart: Date;
     toggleSleepingMode: Function;
+    saveSleepSession: Function;
     awakeningCount: number;
 };
 
@@ -18,6 +19,7 @@ export default function ClockFace({
     sleepingModeActive,
     sleepingModeStart,
     toggleSleepingMode,
+    saveSleepSession,
     awakeningCount,
 }: ClockFaceProps) {
     const [promptEndSleep, setPromptEndSleep] = useState(false);
@@ -54,12 +56,21 @@ export default function ClockFace({
                 <></>
             )}
 
-            {promptEndSleep ? (
+            {sleepingModeActive && promptEndSleep ? (
                 //  If the user is being prompted to end their sleep session,
                 //  show the elements to allow them to do so
                 <>
                     <p>Save sleep session?</p>
-                    <Button onClick={() => {}} text="Yes" />
+                    <Button
+                        onClick={() => {
+                            //  Disable the prompt to end the sleep session and
+                            //  call the provided callback
+                            setPromptEndSleep(false);
+                            saveSleepSession();
+                        }}
+                        text="Yes"
+                    />
+
                     <Button
                         onClick={() => {
                             setPromptEndSleep(false);
@@ -85,7 +96,6 @@ export default function ClockFace({
                     <Button
                         onClick={() => {
                             if (sleepingModeActive) {
-                                //toggleSleepingMode();
                                 setPromptEndSleep(true);
                             } else {
                                 toggleSleepingMode();

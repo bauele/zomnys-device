@@ -1,15 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Link } from 'react-router-dom';
 
 import ClockFace from './pages/clockFace';
 import LogAwakening from './pages/logAwakening';
 
-import { SleepLog, SleepSession } from 'shared';
-
-let sl = new SleepLog();
-sl.print();
-
-let sr = new SleepSession('1', new Date(), new Date(), 3);
+import { SleepSession } from 'shared';
+import Button from './components/button';
+import SleepLog from './pages/sleepLog';
 
 export default function App() {
     //  Timer that is used to update the clock
@@ -24,7 +21,10 @@ export default function App() {
     );
 
     useEffect(() => {
-        //  Obtain a new date object with the current time every second
+        //  Get the current date immediately
+        setCurrentDate(new Date());
+
+        //  Continue to update the current date every second
         timerId = setInterval(() => {
             setCurrentDate(new Date());
         }, 1000);
@@ -33,7 +33,7 @@ export default function App() {
             //  Release the timer when unmounting component
             clearInterval(timerId);
         };
-    });
+    }, []);
 
     function toggleSleepingMode() {
         //  If sleeping mode was not already active, get a current timestamp
@@ -57,6 +57,36 @@ export default function App() {
         setAwakeningCount(awakeningCount + 1);
     }
 
+    async function saveSleepSession() {
+        try {
+            //  Create a new sleep session
+            const sleepSession = new SleepSession(
+                sleepingModeStart,
+                new Date(),
+                awakeningCount,
+            );
+
+            //  Post the sleep session to the server
+            await fetch(
+                `${process.env.REACT_APP_SERVER_ADDRESS}/save-sleep-session`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sleepSession,
+                    }),
+                },
+            );
+
+            //  Once sleep session has been saved, turn off sleeping mode
+            toggleSleepingMode();
+        } catch (e) {
+            console.error('Error saving sleep session: ', e);
+        }
+    }
+
     return (
         <main>
             <Routes>
@@ -64,12 +94,16 @@ export default function App() {
                     path="/"
                     element={
                         <>
-                            <p>Sleep Log</p>
+                            <Link to="/pages/sleep-log">
+                                <Button onClick={() => {}} text="Sleep Log" />
+                            </Link>
+
                             <ClockFace
                                 currentDate={currentDate}
                                 sleepingModeActive={sleepingModeActive}
                                 sleepingModeStart={sleepingModeStart}
                                 toggleSleepingMode={() => toggleSleepingMode()}
+                                saveSleepSession={saveSleepSession}
                                 awakeningCount={awakeningCount}
                             ></ClockFace>
                         </>
@@ -88,6 +122,7 @@ export default function App() {
                         />
                     }
                 ></Route>
+                <Route path="pages/sleep-log" element={<SleepLog />}></Route>
             </Routes>
         </main>
     );

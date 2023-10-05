@@ -5,5 +5,5 @@ import { SleepSession } from 'shared';
 //  and a database
 export interface ISleepSessionDAO {
     addSleepSession: (sleepSession: SleepSession) => void;
-    getAllSleepSessions: () => Array<SleepSession>;
+    getAllSleepSessions: () => Promise<SleepSession[]>;
 }
