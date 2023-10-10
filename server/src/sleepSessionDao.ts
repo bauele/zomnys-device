@@ -1,86 +1,45 @@
-import { create } from 'domain';
-import { ISleepSessionDAO } from './iSleepSessionDao';
 import { SleepSession } from 'shared';
-import sqlite3, { OPEN_READWRITE } from 'sqlite3';
+import { iDAOSqlite } from './iDaoSqlite';
+import { ISleepSessionDAO } from './iSleepSessionDao';
 
-export class SleepSessionDAO implements ISleepSessionDAO {
-    database: sqlite3.Database | null;
+export class SleepSessionDAO extends iDAOSqlite implements ISleepSessionDAO {
+    private tableName = 'sleep_sessions';
 
     constructor() {
-        this.database = null;
+        super();
     }
 
-    //  Attempts to create or open the database. If successful, also attempts
-    //  to create the table if it doesn't already exist
-    //  path -  Location of where to create or open database
-    //  Returns a promise
-    initialize(path: string) {
-        const createOpenDatabase = (success: () => void) => {
-            //  Create database if it doesn't already exist
-            this.database = new sqlite3.Database(
-                path,
-                sqlite3.OPEN_CREATE | sqlite3.OPEN_READWRITE,
-                (error) => {
-                    if (error) {
-                        console.error(
-                            'Error creating sleep_sessions database: ' + error,
-                        );
-                    } else {
-                        success();
-                    }
-                },
-            );
-        };
-
-        const createOpenTable = (success: () => void) => {
-            //  Create table if it doesn't already exist
-            this.database?.exec(
-                'CREATE TABLE IF NOT EXISTS sleep_sessions(sleep_start INTEGER, sleep_end INTEGER, awakening_count INTEGER, PRIMARY KEY(sleep_start, sleep_end))',
-                (error) => {
-                    if (error) {
-                        console.error(
-                            'Error creating sleep_sessions table: ' + error,
-                        );
-                    } else {
-                        success();
-                    }
-                },
-            );
-        };
+    initalize(path: string) {
+        const createOpenTableStatement = `CREATE TABLE IF NOT EXISTS 
+            ${this.tableName}
+            (   sleep_start INTEGER, 
+                sleep_end INTEGER,
+                awakening_count INTEGER, 
+                PRIMARY KEY(sleep_start, sleep_end))`;
 
         return new Promise((success: Function) => {
-            createOpenDatabase(() => {
-                createOpenTable(() => {
-                    success();
-                });
-            });
+            super.initializeDao(path, createOpenTableStatement);
+            success();
         });
     }
 
-    //  Add a sleep session into the local database
-    //  sleepSession -  SleepSession object to be added
     addSleepSession(sleepSession: SleepSession) {
-        this.database?.run('INSERT INTO sleep_sessions VALUES (?, ?, ?)', [
+        this.database?.run(`INSERT INTO ${this.tableName} VALUES (?, ?, ?)`, [
             sleepSession.timestampStart,
             sleepSession.timestampEnd,
             sleepSession.awakeningCount,
         ]);
     }
 
-    //  Get all sleep sessions stored in local database
-    //  Returns a promise containing the found sleep sessions
     getAllSleepSessions() {
         return new Promise(
-            (completion: (sleepSession: SleepSession[]) => void) => {
+            (completion: (sleepSessions: SleepSession[]) => void) => {
                 let sleepSessions = new Array<SleepSession>();
 
-                //  Each row will contain fields matching the table
-                try {
-                    this.database?.each(
-                        // SQL query to run
-                        'SELECT * FROM sleep_sessions',
+                super
+                    .getAllDaoType(
+                        this.tableName,
 
-                        // Callback performed on each returned row
                         (
                             err: Error,
                             row: {
@@ -101,17 +60,10 @@ export class SleepSessionDAO implements ISleepSessionDAO {
 
                             sleepSessions.push(sleepSession);
                         },
-
-                        //  Callback performed on completion of query
-                        () => {
-                            return completion(sleepSessions);
-                        },
-                    );
-                } catch (e) {
-                    console.error(
-                        'Error getting sleep sessions from database: ' + e,
-                    );
-                }
+                    )
+                    .then(() => {
+                        return completion(sleepSessions);
+                    });
             },
         );
     }

@@ -17,8 +17,11 @@ describe('Sleep Log', () => {
         );
 
         //  findAllBy returns a promise, so this is used to give the
-        //  server mock some time to complete
-        const sleepSessions = await screen.findAllByRole('listitem');
-        expect(sleepSessions.length).toBe(2);
+        //  server mock some time to complete.
+        const listItemCount = await screen.findAllByRole('listitem');
+
+        //  Based on the mock test, expect a total of 7 <li /> elements
+        //  to be rendered
+        expect(listItemCount.length).toBe(7);
     });
 });
