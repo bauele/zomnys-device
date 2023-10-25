@@ -73,12 +73,88 @@ export default function SleepLog({}: SleepLogProps) {
                                     sleepAwakening.timestamp,
                                 ).toLocaleTimeString()}
                                 -{sleepAwakening.reason}
+                                <Button
+                                    text="Delete"
+                                    onClick={() => {
+                                        deleteSleepAwakening(sleepAwakening);
+                                    }}
+                                />
                             </li>
                         );
                     },
                 )}
             </ol>
         );
+    }
+
+    async function deleteSleepSession(sleepSession: SleepSession) {
+        try {
+            //  Send request to delete sleep awakening
+            const deleteSleepSessionResponse = await fetch(
+                `${process.env.REACT_APP_SERVER_ADDRESS}/delete-sleep-session`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sleepSession,
+                    }),
+                },
+            );
+
+            if (deleteSleepSessionResponse.status !== 200) {
+                throw new Error();
+            } else {
+                //  Filter the array to every element except for the one with the same timestamp
+                //  matching supplied argument
+                const newSleepSessions = sleepSessions.filter(
+                    (element) =>
+                        new Date(element.timestampStart).getTime() !==
+                        new Date(sleepSession.timestampStart).getTime(),
+                );
+
+                //  Remove sleep awakening from state
+                setSleepSessions(newSleepSessions);
+            }
+        } catch (e) {
+            console.error('Error deleteing sleep awakening: ', e);
+        }
+    }
+
+    async function deleteSleepAwakening(sleepAwakening: SleepAwakening) {
+        try {
+            //  Send request to delete sleep awakening
+            const deleteSleepAwakeningResponse = await fetch(
+                `${process.env.REACT_APP_SERVER_ADDRESS}/delete-sleep-awakening`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sleepAwakening,
+                    }),
+                },
+            );
+
+            if (deleteSleepAwakeningResponse.status !== 200) {
+                throw new Error();
+            } else {
+                //  Filter the array to every element except for the one with the same timestamp
+                //  matching supplied argument
+                const newSleepAwakenings = sleepAwakenings.filter(
+                    (element) =>
+                        new Date(element.timestamp).getTime() !==
+                        new Date(sleepAwakening.timestamp).getTime(),
+                );
+
+                //  Remove sleep awakening from state
+                setSleepAwakenings(newSleepAwakenings);
+            }
+        } catch (e) {
+            console.error('Error deleteing sleep awakening: ', e);
+        }
     }
 
     return (
@@ -99,6 +175,12 @@ export default function SleepLog({}: SleepLogProps) {
                             ).toLocaleTimeString()}
                             {' ~ '}
                             Awakenings: {sleepSession.awakeningCount}
+                            <Button
+                                text="Delete"
+                                onClick={() => {
+                                    deleteSleepSession(sleepSession);
+                                }}
+                            />
                             {mapSleepAwakenings(sleepSession)}
                         </li>
                     );

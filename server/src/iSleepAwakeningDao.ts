@@ -5,5 +5,6 @@ import { SleepAwakening } from 'shared';
 //  and a database
 export interface ISleepAwakeningDAO {
     addSleepAwakening: (sleepAwakening: SleepAwakening) => void;
+    deleteSleepAwakening: (sleepAwakening: SleepAwakening) => void;
     getAllSleepAwakenings: () => Promise<SleepAwakening[]>;
 }

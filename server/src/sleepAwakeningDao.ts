@@ -32,6 +32,27 @@ export class SleepAwakeningDAO
         ]);
     }
 
+    deleteSleepAwakening(sleepAwakening: SleepAwakening) {
+        return new Promise((completion: (changes: number | Error) => void) => {
+            this.database?.run(
+                `DELETE FROM ${this.tableName} WHERE timestamp = (?) and reason = (?)`,
+                [sleepAwakening.timestamp, sleepAwakening.reason],
+
+                //  Callback function must be in this form in order to preserve
+                //  the "this" binding used by sqlite
+                function (error) {
+                    if (error) {
+                        completion(
+                            new Error('Failed to delete sleep awakening'),
+                        );
+                    } else {
+                        completion(this.changes);
+                    }
+                },
+            );
+        });
+    }
+
     getAllSleepAwakenings() {
         return new Promise(
             (completion: (sleepAwakenings: SleepAwakening[]) => void) => {
@@ -67,7 +88,7 @@ export class SleepAwakeningDAO
         );
     }
 
-    getAwakeningsBetweenTimestamps(start: string, end: string) {
+    getAwakeningsBetweenTimestamps(start: Date, end: Date) {
         return new Promise(
             (completion: (sleepAwakenings: SleepAwakening[]) => void) => {
                 //  Each row will contain fields matching the table
@@ -78,13 +99,16 @@ export class SleepAwakeningDAO
                         // SQL query to run
                         `SELECT * FROM ${this.tableName} WHERE timestamp BETWEEN (?) AND (?);`,
 
-                        [start, end],
+                        [
+                            new Date(start).toISOString(),
+                            new Date(end).toISOString(),
+                        ],
 
                         //  Callback performed on completion of query
                         //  TODO: Checking on this? Can it be safe to assume that
                         //  this will be a SleepAwakening array? What if only
                         //  one row is returned?
-                        (err, rows: SleepAwakening[]) => {
+                        (err: Error, rows: SleepAwakening[]) => {
                             if (err) {
                                 console.error(err);
                             }

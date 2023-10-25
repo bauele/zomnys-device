@@ -79,4 +79,11 @@ export const handlers = [
             );
         },
     ),
+
+    rest.delete(
+        `${process.env.REACT_APP_SERVER_ADDRESS}/delete-sleep-awakening`,
+        (request, response, context) => {
+            return response(context.status(200));
+        },
+    ),
 ];

@@ -33,8 +33,8 @@ if (!sleepAwakeningsDatabasePath) {
     );
     process.exit(1);
 }
-let sleepAwakeningDao = new SleepAwakeningDAO();
-sleepAwakeningDao.initalize(sleepAwakeningsDatabasePath).then(() => {
+let sleepAwakeningDAO = new SleepAwakeningDAO();
+sleepAwakeningDAO.initalize(sleepAwakeningsDatabasePath).then(() => {
     console.log('Sleep awakening database ready');
 });
 
@@ -58,7 +58,7 @@ app.get('/sleep-sessions', (req: Request, res: Response) => {
 //  Get all of the available sleep awakenings
 app.get('/sleep-awakenings', (req: Request, res: Response) => {
     const getAllSleepAwakeningsPromise =
-        sleepAwakeningDao?.getAllSleepAwakenings();
+        sleepAwakeningDAO?.getAllSleepAwakenings();
 
     getAllSleepAwakeningsPromise.then((sleepAwakenings: SleepAwakening[]) => {
         res.send(sleepAwakenings);
@@ -72,7 +72,7 @@ app.get('/sleep-log', (req: Request, res: Response) => {
 
     getAllSleepSessionsPromise.then((sleepSessions: SleepSession[]) => {
         const getAllSleepAwakeningsPromise =
-            sleepAwakeningDao?.getAllSleepAwakenings();
+            sleepAwakeningDAO?.getAllSleepAwakenings();
 
         getAllSleepAwakeningsPromise.then(
             (sleepAwakenings: SleepAwakening[]) => {
@@ -87,7 +87,7 @@ app.get('/sleep-log', (req: Request, res: Response) => {
 
 //  TODO: Error checking on request body parameters
 app.post('/save-sleep-session', (req: Request, res: Response) => {
-    console.log('Request recieved');
+    console.log('request sent to /save-sleep-session');
 
     console.log(req.body);
     const sleepSession = req.body.sleepSession;
@@ -97,8 +97,91 @@ app.post('/save-sleep-session', (req: Request, res: Response) => {
     sleepSessionDAO.addSleepSession(sleepSession);
 
     sleepAwakenings.forEach((awakening: SleepAwakening) => {
-        sleepAwakeningDao.addSleepAwakening(awakening);
+        sleepAwakeningDAO.addSleepAwakening(awakening);
     });
 
     res.send();
+});
+
+app.delete('/delete-sleep-awakening', (req: Request, res: Response) => {
+    console.log('request sent to /delete-sleep-awakening');
+
+    const sleepAwakening = req.body.sleepAwakening;
+
+    const deleteSleepAwakeningPromise =
+        sleepAwakeningDAO.deleteSleepAwakening(sleepAwakening);
+    deleteSleepAwakeningPromise.then((changes) => {
+        console.log('Changes: ', changes);
+
+        if (changes == 0) {
+            res.sendStatus(404);
+        } else if (changes == 1) {
+            res.sendStatus(200);
+        }
+    });
+});
+
+//  Try to see if this could be an async function
+app.delete('/delete-sleep-session', (req: Request, res: Response) => {
+    console.log('request sent to /delete-sleep-session');
+
+    const sleepSession: SleepSession = req.body.sleepSession;
+
+    const deleteSleepSessionPromise =
+        sleepSessionDAO.deleteSleepSession(sleepSession);
+    deleteSleepSessionPromise.then((changes) => {
+        console.log('Sleep Session Changes: ', changes);
+
+        if (changes == 0) {
+            res.sendStatus(404);
+        } else if (changes == 1) {
+            //  Delete all associated sleep awakenings
+            const associatedSleepAwakeningsPromise =
+                sleepAwakeningDAO.getAwakeningsBetweenTimestamps(
+                    sleepSession.timestampStart,
+                    sleepSession.timestampEnd,
+                );
+
+            let promiseArray = new Array<Promise<number | Error | void>>();
+
+            associatedSleepAwakeningsPromise.then((sleepAwakenings) => {
+                for (let i = 0; i < sleepAwakenings.length; i++) {
+                    const sleepAwakening = sleepAwakenings.at(i);
+
+                    if (sleepAwakening) {
+                        const deleteSleepAwakeningPromise =
+                            sleepAwakeningDAO.deleteSleepAwakening(
+                                sleepAwakening,
+                            );
+
+                        promiseArray.push(
+                            deleteSleepAwakeningPromise.then((changes) => {
+                                return changes;
+                            }),
+                        );
+                    }
+                }
+
+                Promise.all(promiseArray).then((promiseResults) => {
+                    let deletions = 0;
+
+                    promiseResults.forEach((result) => {
+                        if (typeof result === 'number') {
+                            deletions += result;
+                        }
+                    });
+
+                    console.log(
+                        `Deleted ${deletions} out of ${sleepAwakenings.length} sleep awakenings`,
+                    );
+                    if (deletions === sleepAwakenings.length) {
+                        res.sendStatus(200);
+                    } else {
+                        console.log();
+                        res.sendStatus(500);
+                    }
+                });
+            });
+        }
+    });
 });

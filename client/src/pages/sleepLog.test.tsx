@@ -24,4 +24,6 @@ describe('Sleep Log', () => {
         //  to be rendered
         expect(listItemCount.length).toBe(7);
     });
+
+    it('should properly delete a sleep awakening on button click', async () => {});
 });
