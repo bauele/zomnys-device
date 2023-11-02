@@ -6,4 +6,5 @@ node_modules
 #   Make exception for the configuration file used by
 #   react-app-rewired
 !config-overrides.js
+!setup.js
 !example.env
