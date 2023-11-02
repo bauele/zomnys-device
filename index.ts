@@ -47,41 +47,26 @@ app.use(
 app.use(express.json());
 
 //  Get all of the available sleep sessions
-app.get('/sleep-sessions', (req: Request, res: Response) => {
-    const getAllSleepSessionsPromise = sleepSessionDAO?.getAllSleepSessions();
-
-    getAllSleepSessionsPromise.then((sleepSessions: SleepSession[]) => {
-        res.send(sleepSessions);
-    });
+app.get('/sleep-sessions', async (req: Request, res: Response) => {
+    const sleepSessions = await sleepSessionDAO?.getAllSleepSessions();
+    res.send(sleepSessions);
 });
 
 //  Get all of the available sleep awakenings
 app.get('/sleep-awakenings', (req: Request, res: Response) => {
-    const getAllSleepAwakeningsPromise =
-        sleepAwakeningDAO?.getAllSleepAwakenings();
-
-    getAllSleepAwakeningsPromise.then((sleepAwakenings: SleepAwakening[]) => {
-        res.send(sleepAwakenings);
-    });
+    const sleepAwakenings = sleepAwakeningDAO?.getAllSleepAwakenings();
+    res.send(sleepAwakenings);
 });
 
 //  Get all of the available sleep sessions and sleep awakenings. These
 //  will be returned as separate fields in a joint objec
-app.get('/sleep-log', (req: Request, res: Response) => {
-    const getAllSleepSessionsPromise = sleepSessionDAO?.getAllSleepSessions();
+app.get('/sleep-log', async (req: Request, res: Response) => {
+    const sleepSessions = await sleepSessionDAO?.getAllSleepSessions();
+    const sleepAwakenings = await sleepAwakeningDAO?.getAllSleepAwakenings();
 
-    getAllSleepSessionsPromise.then((sleepSessions: SleepSession[]) => {
-        const getAllSleepAwakeningsPromise =
-            sleepAwakeningDAO?.getAllSleepAwakenings();
-
-        getAllSleepAwakeningsPromise.then(
-            (sleepAwakenings: SleepAwakening[]) => {
-                res.send({
-                    sleepSessions: sleepSessions,
-                    sleepAwakenings: sleepAwakenings,
-                });
-            },
-        );
+    res.send({
+        sleepSessions: sleepSessions,
+        sleepAwakenings: sleepAwakenings,
     });
 });
 
