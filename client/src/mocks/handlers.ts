@@ -86,4 +86,11 @@ export const handlers = [
             return response(context.status(200));
         },
     ),
+
+    rest.delete(
+        `${process.env.REACT_APP_SERVER_ADDRESS}/delete-sleep-session`,
+        (request, response, context) => {
+            return response(context.status(200));
+        },
+    ),
 ];
