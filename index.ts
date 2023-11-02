@@ -8,7 +8,14 @@ import { SleepSession } from './shared/sleepSession';
 import { SleepAwakening } from './shared/sleepAwakening';
 
 const app = express();
-const port = 5000;
+let port: number;
+if (!process.env.SERVER_PORT) {
+    console.error('Server port not properly set. Terminating.');
+    process.exit(1);
+} else {
+    port = Number.parseInt(process.env.SERVER_PORT);
+    console.log('Server port set to', port);
+}
 
 //  Read in the path set for the sleep sessions database from the environment
 //  variables file. If not available, throw an error and terminate
