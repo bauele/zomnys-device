@@ -103,85 +103,76 @@ app.post('/save-sleep-session', (req: Request, res: Response) => {
     res.send();
 });
 
-app.delete('/delete-sleep-awakening', (req: Request, res: Response) => {
+app.delete('/delete-sleep-awakening', async (req: Request, res: Response) => {
     console.log('request sent to /delete-sleep-awakening');
 
+    //  TODO: Do not assume that this object is what is being sent
     const sleepAwakening = req.body.sleepAwakening;
 
-    const deleteSleepAwakeningPromise =
-        sleepAwakeningDAO.deleteSleepAwakening(sleepAwakening);
-    deleteSleepAwakeningPromise.then((changes) => {
-        console.log('Changes: ', changes);
+    const deletedSleepAwakenings =
+        await sleepAwakeningDAO.deleteSleepAwakening(sleepAwakening);
 
-        if (changes == 0) {
-            res.sendStatus(404);
-        } else if (changes == 1) {
-            res.sendStatus(200);
-        }
-    });
+    //  If one sleep awakening was deleted, then the request was successful
+    if (deletedSleepAwakenings === 1) {
+        res.sendStatus(200);
+    }
+
+    //  Otherwise, there was an error
+    else {
+        res.sendStatus(404);
+    }
 });
 
-//  Try to see if this could be an async function
-app.delete('/delete-sleep-session', (req: Request, res: Response) => {
+app.delete('/delete-sleep-session', async (req: Request, res: Response) => {
     console.log('request sent to /delete-sleep-session');
 
+    //  TODO: Do not assume that this object is what is being sent
     const sleepSession: SleepSession = req.body.sleepSession;
 
-    const deleteSleepSessionPromise =
-        sleepSessionDAO.deleteSleepSession(sleepSession);
-    deleteSleepSessionPromise.then((changes) => {
-        console.log('Sleep Session Changes: ', changes);
+    const deletedSleepSessions =
+        await sleepSessionDAO.deleteSleepSession(sleepSession);
 
-        if (changes == 0) {
-            res.sendStatus(404);
-        } else if (changes == 1) {
-            //  Delete all associated sleep awakenings
-            const associatedSleepAwakeningsPromise =
-                sleepAwakeningDAO.getAwakeningsBetweenTimestamps(
-                    sleepSession.timestampStart,
-                    sleepSession.timestampEnd,
-                );
+    //  Return an error if no deletions were made. This indicates
+    //  that the resource to be deleted was not found
+    console.log(deletedSleepSessions);
+    if (deletedSleepSessions == 0) {
+        res.sendStatus(404);
+        return;
+    }
 
-            let promiseArray = new Array<Promise<number | Error | void>>();
+    //  Get all of the sleep awakenings in the sleep session
+    const sleepAwakeningsInSession =
+        await sleepAwakeningDAO.getAwakeningsBetweenTimestamps(
+            sleepSession.timestampStart,
+            sleepSession.timestampEnd,
+        );
 
-            associatedSleepAwakeningsPromise.then((sleepAwakenings) => {
-                for (let i = 0; i < sleepAwakenings.length; i++) {
-                    const sleepAwakening = sleepAwakenings.at(i);
+    //  Declare a function to delete a sleep awakening
+    const deleteSleepAwakening = async (sleepAwakening: SleepAwakening) => {
+        return sleepAwakeningDAO.deleteSleepAwakening(sleepAwakening);
+    };
 
-                    if (sleepAwakening) {
-                        const deleteSleepAwakeningPromise =
-                            sleepAwakeningDAO.deleteSleepAwakening(
-                                sleepAwakening,
-                            );
+    //  Filter the sleep awakenings to ensure all elements are valid, then
+    //  delete each sleep awakening and return an array of deletion results
+    const sleepAwakeningsDeletionResults = await Promise.all(
+        sleepAwakeningsInSession
+            .filter((sleepAwakenings) => sleepAwakenings)
+            .map(deleteSleepAwakening),
+    );
 
-                        promiseArray.push(
-                            deleteSleepAwakeningPromise.then((changes) => {
-                                return changes;
-                            }),
-                        );
-                    }
-                }
+    //  Filter the results to include only results that returned a numerical value
+    const deletedSleepAwakenings = sleepAwakeningsDeletionResults.filter(
+        (sleepAwakening) => typeof sleepAwakening === 'number',
+    );
 
-                Promise.all(promiseArray).then((promiseResults) => {
-                    let deletions = 0;
-
-                    promiseResults.forEach((result) => {
-                        if (typeof result === 'number') {
-                            deletions += result;
-                        }
-                    });
-
-                    console.log(
-                        `Deleted ${deletions} out of ${sleepAwakenings.length} sleep awakenings`,
-                    );
-                    if (deletions === sleepAwakenings.length) {
-                        res.sendStatus(200);
-                    } else {
-                        console.log();
-                        res.sendStatus(500);
-                    }
-                });
-            });
-        }
-    });
+    //  If the amount of deleted sleep awakening records matches the inital number
+    //  of sleep awakenings in the session, then all of the sleep awakenings were
+    //  successfully deleted
+    if (deletedSleepAwakenings.length === sleepAwakeningsInSession.length) {
+        console.log('Deletion successful');
+        res.sendStatus(200);
+    } else {
+        console.log('Error processing deletions');
+        res.sendStatus(500);
+    }
 });
